@@ -85,18 +85,6 @@ data_assumptions = """
         """
 st.markdown(data_assumptions, unsafe_allow_html=True)
 
-## Assumes input file is CSV
-def get_data(file_name):
-    logger.info(f"Trying to load data in {file_name}")
-    # getting the loaded data
-    data = pd.read_csv(file_name)
-
-    if "Unnamed: 0" in data.columns:
-        data.set_index(["Unnamed: 0"], inplace=True)
-        # data.drop(columns=["Unnamed: 0"],axis=1,inplace=True)
-
-    return data
-
 
 # dividing screen into two half to show raw data
 raw_data_col, final_data_col = st.columns(2)
@@ -107,13 +95,14 @@ final_data = None
 with raw_data_col:
     with st.spinner("Loading Raw Data..!!!"):
         st.write("Raw Data")
-        raw_data = get_data("./data/raw/PJME_hourly.csv")
+        raw_data = pd.read_csv("./data/raw/PJME_hourly.csv")
         st.dataframe(raw_data)
 
 with final_data_col:
     with st.spinner("Loading Final Data...!!"):
         st.write("Final Data :")
-        final_data = get_data("./data/processed/final_data.csv")
+        # final_data = pd.read_csv("./data/processed/final_data.csv")
+        final_data = pd.read_csv("./data/processed/final_data_test.csv")
         st.dataframe(final_data)
 
 
@@ -182,7 +171,6 @@ energy_forecast = """ <h2 style="color:#a2d2fb">Energy Demand Forecasting</h2> "
 st.markdown(energy_forecast, unsafe_allow_html=True)
 
 # model location
-holt_winter_model_path = "models/holt_winter_model.pkl"
 prophet_model_path = 'models/prophet_model.pkl'
 
 # adding dropdown to select model
@@ -203,87 +191,63 @@ if model_name == "Prophet":
                 train = TrainProphet()
                 forecast = train.predict(loaded_model, periods=20)
 
-                print(forecast.sample())
-
-                print(final_data.sample())
     logger.info('Model loaded successfully !')
 else:
     # model = ModelLoader().load_model(holt_winter_model_path)
     pass
 
-test_data = get_data("./data/processed/test.csv")
+test_data = pd.read_csv("./data/processed/test.csv")
+logger.info('Read Test Data !!!!')
+logger.info('Reading columns in Test Data !')
+
 test_data['ds'] = pd.to_datetime(test_data['ds'])
+
 train.evaluate_model(forecast=forecast, test_data=test_data)
 
 
-
-# with open(prophet_model_path, "rb") as model_file:
-#     loaded_model = pickle.load(model_file)
-# train = TrainProphet()
-# logger.info('Model loaded successfully !')
-
-
-# inferecning obj
-
-
-# Plot the forecast
-# loaded_model.plot(forecast)
-# plt.title("Prophet Forecast")
-# plt.show()
-
-# mae, mse, rmse, mape = train.evaluate_model(forecast, test_data)
-
-# loading test_data & plotting forecasting for test data
-
-# test_data_pred = inference_obj.test_data_prediction(test_data,model_name)
-
-
-
-# # test_pred_plot = visualizer.test_prediction_plot(
-# #     final_data, forecast, "y"
-# # )
+test_pred_plot = visualizer.test_prediction_plot(
+    test_data, forecast, "y"
+)
 
 # # test data Forecasting
-# add_vertical_space(2)
-# test_data_forecasting = """ <h4>Energy Demand Forecasting For Test Data</h4> """
-# st.markdown(test_data_forecasting, unsafe_allow_html=True)
+add_vertical_space(2)
+test_data_forecasting = """ <h4>Energy Demand Forecasting For Test Data</h4> """
+st.markdown(test_data_forecasting, unsafe_allow_html=True)
 
-# _, plot_col, _ = st.columns([1, 3, 1])
-# with plot_col:
-#     st.plotly_chart(test_pred_plot)
-
-
-# add_vertical_space(2)
-
-# hourly_forecasting = """ <h4>Forecasting With Confidence Intervals</h4> """
-# st.markdown(hourly_forecasting, unsafe_allow_html=True)
-
-# add_vertical_space(2)
-
-# # dividing columns for plot & slider
-# slider_col, plot_col = st.columns([1, 3])
+_, plot_col, _ = st.columns([1, 3, 1])
+with plot_col:
+    st.plotly_chart(test_pred_plot)
 
 
-# no_of_hours = 24
-# with slider_col:
-#     days = st.slider("No of days", min_value=1, max_value=100, value=2)
-#     if days:
-#         no_of_hours *= days
+add_vertical_space(2)
 
-# forecast_values = train.predict(loaded_model, periods=no_of_hours)
-# with plot_col:
-#     with st.spinner('Loading......!!!!'):
-#         st.plotly_chart(forecast_values)
-# forecasting for users input
-# if model_name=="Holt-Winter":
-#     forecast_values = inference_obj.HoltWinterForecast_with_intervals(
-#         no_of_hours, confidence_level=0.95
-#     )
-# else:
-#     forecast_values = inference_obj.ProphetForecast_with_intervals(
-#         no_of_hours
-#     )
-# forecast_plot = visualizer.forecast_with_confidence(forecast_values,model_name)
-# with plot_col:
-#     with st.spinner("Loading...!!!"):
-#         st.plotly_chart(forecast_plot)
+hourly_forecasting = """ <h4>Forecasting With Confidence Intervals</h4> """
+st.markdown(hourly_forecasting, unsafe_allow_html=True)
+
+add_vertical_space(2)
+
+# dividing columns for plot & slider
+slider_col, plot_col = st.columns([1, 3])
+
+
+no_of_hours = 24
+with slider_col:
+    days = st.slider("No of days", min_value=1, max_value=100, value=2)
+    if days:
+        no_of_hours *= days
+
+forecast_values = train.predict(loaded_model, periods=no_of_hours)
+
+#forecasting for users input
+if model_name=="Holt-Winter":
+    pass
+    # forecast_values = inference_obj.HoltWinterForecast_with_intervals(
+    #     no_of_hours, confidence_level=0.95
+    # )
+else:
+    forecast_values = train.predict(loaded_model, periods=no_of_hours)
+
+forecast_plot = visualizer.forecast_with_confidence(forecast_values[-no_of_hours:], model_name)
+with plot_col:
+    with st.spinner("Loading...!!!"):
+        st.plotly_chart(forecast_plot)        

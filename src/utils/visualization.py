@@ -85,7 +85,7 @@ class Visualizer:
                 go.Scatter(
                     # x=test_data.index,
                     x=test_data['ds'],
-                    y=test_pred,
+                    y=test_pred['yhat'],
                     mode="lines",
                     name="Test - Prediction",
                     line=dict(color="orange"),
@@ -104,7 +104,7 @@ class Visualizer:
         except Exception as e:
             self.logger.exception("Error while plotting prediction plot", e)
 
-    def forecast_with_confidence(self, forecast_values,model_name):
+    def forecast_with_confidence(self, forecast_values, model_name):
         """
         Generate and display a forecast plot with confidence intervals using Plotly Graph Objects.
 
@@ -121,8 +121,8 @@ class Visualizer:
             # Add predicted values
             fig.add_trace(
                 go.Scatter(
-                    x=np.arange(1, len(forecast_values["forecast"]) + 1),
-                    y=forecast_values["forecast"],
+                    x=np.arange(1, len(forecast_values["yhat"]) + 1),
+                    y=forecast_values["yhat"],
                     mode="lines",
                     name="Predicted",
                 )
@@ -131,8 +131,8 @@ class Visualizer:
             # Add confidence intervals
             fig.add_trace(
                 go.Scatter(
-                    x=np.arange(1, len(forecast_values["lower_bound"]) + 1),
-                    y=forecast_values["lower_bound"],
+                    x=np.arange(1, len(forecast_values["yhat_lower"]) + 1),
+                    y=forecast_values["yhat_lower"],
                     mode="lines",
                     line=dict(color="rgba(0,0,255,0.2)"),
                     name="Lower Bound",
@@ -141,8 +141,8 @@ class Visualizer:
 
             fig.add_trace(
                 go.Scatter(
-                    x=np.arange(1, len(forecast_values["upper_bound"]) + 1),
-                    y=forecast_values["upper_bound"],
+                    x=np.arange(1, len(forecast_values["yhat_upper"]) + 1),
+                    y=forecast_values["yhat_upper"],
                     mode="lines",
                     fill="tonexty",
                     fillcolor="rgba(0,0,255,0.2)",
@@ -153,7 +153,7 @@ class Visualizer:
 
             # Update layout
             fig.update_layout(
-                title=model_name+" Forecast with Confidence Intervals",
+                title=model_name + " Forecast with Confidence Intervals",
                 xaxis_title="Hours",
                 yaxis_title="Forecasted Value",
             )

@@ -19,7 +19,6 @@ class SeasonalDecomposer:
         - decomposed (DecomposeResult): Result of seasonal decomposition.
         """
         try:
-            df = df.set_index('ds', inplace=False)
             series = df[["y"]]
             decomposed = seasonal_decompose(series, model=model, period=self.frequency)
             return decomposed
