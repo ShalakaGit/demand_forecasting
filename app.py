@@ -5,6 +5,7 @@ import pandas as pd
 from src.utils.decomposer import SeasonalDecomposer
 from src.utils.visualization import Visualizer
 from src.build_prophet import TrainProphet
+from src.build_xgboost import TrainXGBoost
 # from src.model.load_model import ModelLoader
 # from src.model.inference import ModelInference
 from src.logger import ProjectLogger
@@ -172,37 +173,41 @@ st.markdown(energy_forecast, unsafe_allow_html=True)
 
 # model location
 prophet_model_path = 'models/prophet_model.pkl'
+xgboost_model_path = 'models/xgb_model.pkl'
 
 # adding dropdown to select model
 drop_down_col, _ = st.columns(2)
 
 with drop_down_col:
-    model_name= st.selectbox("Select Model",["Holt-Winter","Prophet"],index=0)
+    model_name= st.selectbox("Select Model",["XGBoost","Prophet"],index=0)
 
 loaded_model = None
 forecast = None
 train = None
-model_name = 'Prophet'
+# model_name = 'Prophet'
 
 if model_name == "Prophet":
     # model obj
+    test_data = pd.read_csv("./data/processed/test.csv")
     with open(prophet_model_path, "rb") as model_file:
                 loaded_model = pickle.load(model_file)
                 train = TrainProphet()
                 forecast = train.predict(loaded_model, periods=20)
+                # train.evaluate_model(forecast=forecast, test_data=test_data)
 
     logger.info('Model loaded successfully !')
 else:
-    # model = ModelLoader().load_model(holt_winter_model_path)
-    pass
-
-test_data = pd.read_csv("./data/processed/test.csv")
-logger.info('Read Test Data !!!!')
-logger.info('Reading columns in Test Data !')
+    test_data = pd.read_csv("./data/processed/test_xgboost.csv")
+    with open(xgboost_model_path, "rb") as model_file:
+                loaded_model = pickle.load(model_file)
+                train = TrainXGBoost()
+                forecast = train.predict(loaded_model, 20, test_data)
 
 test_data['ds'] = pd.to_datetime(test_data['ds'])
 
-train.evaluate_model(forecast=forecast, test_data=test_data)
+logger.info('Read Test Data !!!!')
+logger.info('Reading columns in Test Data !')
+
 
 
 test_pred_plot = visualizer.test_prediction_plot(
